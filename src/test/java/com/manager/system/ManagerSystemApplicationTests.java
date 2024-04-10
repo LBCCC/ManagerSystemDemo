@@ -23,7 +23,6 @@ class ManagerSystemApplicationTests {
 	public void testAddUser() throws IOException {
 		UserInfo userInfo = new UserInfo();
 		userInfo.setUserId("admin");
-		userInfo.setRole("admin");
 		userInfo.setEndpoint(new HashSet<>(){{add("addUser");}});
 		UserUtils.addUser(userInfo);
 	}

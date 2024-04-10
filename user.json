@@ -1,1 +1,1 @@
-{"admin":{"userId":"admin","endpoint":["addUser"],"role":"admin"},"user1":{"userId":"user1","endpoint":["resourceB","resourceA"],"role":"user"}}
+{"user2":{"userId":"user2","endpoint":["resourceB","resourceA"]},"user1":{"userId":"user1","endpoint":["resourceB","hello","resourceA"]}}

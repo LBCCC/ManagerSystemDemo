@@ -1,5 +1,6 @@
 package com.manager.system;
 
+import com.manager.system.constant.HeaderConstants;
 import com.manager.system.controller.ManagerController;
 import com.manager.system.dto.UserInfo;
 import com.manager.system.util.JsonUtils;
@@ -28,27 +29,27 @@ public class WebMvcTests {
 
     private static String adminAuthInfo = Base64.encodeBase64String("{\"userId\": \"admin\", \"accountName\": \"XXX\", \"role\": \"admin\"}".getBytes(StandardCharsets.UTF_8));
     private static String userAuthInfo = Base64.encodeBase64String("{\"userId\": \"user1\", \"accountName\": \"XXX\", \"role\": \"user\"}".getBytes(StandardCharsets.UTF_8));
+    private static String userAuthInfo2 = Base64.encodeBase64String("{\"userId\": \"user2\", \"accountName\": \"XXX\", \"role\": \"user\"}".getBytes(StandardCharsets.UTF_8));
 
 
     @Test
     public void testAddUser() throws Exception {
 
         UserInfo userInfo = new UserInfo();
-        userInfo.setUserId("user2");
-        userInfo.setRole("user");
-        userInfo.setEndpoint(new HashSet<>(){{add("resourceA");add("resourceB");}});
+        userInfo.setUserId("user1");
+        userInfo.setEndpoint(new HashSet<>(){{add("resourceA");add("resourceB");add("hello");}});
         String bodyJson = JsonUtils.toJson(userInfo);
         assert bodyJson != null;
 
         mockMvc.perform(post("/admin/addUser")
-                        .header("authInfo", adminAuthInfo)
+                        .header(HeaderConstants.ROLE_INFO, adminAuthInfo)
                         .header("Content-Type", "application/json")
                         .content(bodyJson))
                 .andExpect(status().isOk())
                 .andExpect(content().string("success"));
 
         mockMvc.perform(post("/admin/addUser")
-                        .header("authInfo", userAuthInfo)
+                        .header(HeaderConstants.ROLE_INFO, userAuthInfo)
                         .header("Content-Type", "application/json")
                         .content(bodyJson))
                 .andExpect(status().isOk())
@@ -60,13 +61,24 @@ public class WebMvcTests {
     public void testResource() throws Exception {
 
         mockMvc.perform(get("/user/resourceA")
-                        .header("authInfo", userAuthInfo))
+                        .header(HeaderConstants.ROLE_INFO, userAuthInfo))
                 .andExpect(status().isOk())
                 .andExpect(content().string("success"));
 
-        mockMvc.perform(get("/user/resourceC")
-                        .header("authInfo", userAuthInfo))
+        mockMvc.perform(get("/user/hello")
+                        .header(HeaderConstants.ROLE_INFO, userAuthInfo))
                 .andExpect(status().isOk())
-                .andExpect(content().string("500001: do not have access"));
+                .andExpect(content().string("success"));
+
+        mockMvc.perform(get("/user/hello")
+                        .header(HeaderConstants.ROLE_INFO, userAuthInfo2))
+                .andExpect(status().isOk())
+                .andExpect(content().string("failure"));
+
+        mockMvc.perform(get("/user/resourceC")
+                        .header(HeaderConstants.ROLE_INFO, userAuthInfo))
+                .andExpect(status().isOk())
+                .andExpect(content().string("failure"));
+
     }
 }

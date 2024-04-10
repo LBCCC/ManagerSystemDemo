@@ -1,7 +1,7 @@
 package com.manager.system.aop;
 
-import com.manager.system.dto.AuthInfo;
-import com.manager.system.dto.UserInfo;
+import com.manager.system.constant.HeaderConstants;
+import com.manager.system.dto.RoleInfo;
 import com.manager.system.exception.AccessDenyException;
 import com.manager.system.exception.BusinessException;
 import com.manager.system.exception.ErrorCode;
@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -28,48 +29,29 @@ public class AccessCheckAspect {
 
 
     @Around("@annotation(accessCheck)")
-    public Object around(ProceedingJoinPoint joinPoint, AccessCheck accessCheck) throws Throwable {
-        AuthInfo authInfo = getAuthInfo();
-        log.info("check authInfo: {}", JsonUtils.toJson(authInfo));
-        if (authInfo == null) {
-            throw new BusinessException(ErrorCode.INVALID_AUTH_INFO);
-        }
-        String userId = authInfo.getUserId();
-        UserInfo user = UserUtils.getUser(userId);
-        log.info("check user: {}", JsonUtils.toJson(user));
-        if (user == null) {
+    public Object accessCheck(ProceedingJoinPoint joinPoint, AccessCheck accessCheck) throws Throwable {
+        RoleInfo roleInfo = getAuthInfo();
+        String methodName = joinPoint.getSignature().getName();
+        String className = joinPoint.getTarget().getClass().getSimpleName();
+        String logTag = className + "#" + methodName;
+        log.info("user {} try to access {}", JsonUtils.toJson(roleInfo), logTag);
+        if (roleInfo == null) {
             throw new BusinessException(ErrorCode.INVALID_AUTH_INFO);
         }
 
-        if ("admin".equals(user.getRole())) {
-            // admin have all access
-        } else {
-            if ("admin".equals(accessCheck.role())) {
-                throw new AccessDenyException();
-            }
-            if (!user.getEndpoint().contains(accessCheck.endpoint())) {
-                throw new AccessDenyException();
-            }
+        if (Arrays.stream(accessCheck.roles()).noneMatch(role -> Objects.equals(role, roleInfo.getRole()))) {
+            throw new AccessDenyException();
         }
 
         return joinPoint.proceed();
     }
 
-    public AuthInfo getAuthInfo() {
-        try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes != null) {
-                HttpServletRequest request = attributes.getRequest();
-                String headerValue = request.getHeader("authInfo");
-                if (Objects.isNull(headerValue)) {
-                    return null;
-                }
-                String decode = new String(Base64.getDecoder().decode(headerValue));
-                return JsonUtils.fromJson(decode, AuthInfo.class);
-            }
-        } catch (Exception e) {
-            log.error("getAuthInfo error", e);
-            throw e;
+    public RoleInfo getAuthInfo() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            HttpServletRequest request = attributes.getRequest();
+            String headerValue = request.getHeader(HeaderConstants.ROLE_INFO);
+            return UserUtils.extractAuthInfo(headerValue);
         }
         return null;
     }

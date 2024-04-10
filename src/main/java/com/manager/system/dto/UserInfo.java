@@ -13,7 +13,4 @@ public class UserInfo {
 
     private Set<String> endpoint;
 
-    private String role;
-
-
 }

@@ -1,8 +1,11 @@
 package com.manager.system.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.manager.system.dto.RoleInfo;
 import com.manager.system.dto.UserInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,4 +37,19 @@ public class UserUtils {
         });
         return Optional.ofNullable(map).map(m -> m.get(userId)).orElse(null);
     }
+
+    public static RoleInfo extractAuthInfo(String base64Header) {
+        if (Objects.isNull(base64Header)) {
+            return null;
+        }
+        try {
+            String decode = new String(Base64.getDecoder().decode(base64Header));
+            return JsonUtils.fromJson(decode, RoleInfo.class);
+        } catch (Exception e) {
+            log.error("extractAuthInfo error", e);
+        }
+        return null;
+
+    }
+
 }

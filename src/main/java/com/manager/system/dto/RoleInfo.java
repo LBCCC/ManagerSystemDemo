@@ -3,7 +3,7 @@ package com.manager.system.dto;
 import lombok.Data;
 
 @Data
-public class AuthInfo {
+public class RoleInfo {
 
     private String userId;
 
